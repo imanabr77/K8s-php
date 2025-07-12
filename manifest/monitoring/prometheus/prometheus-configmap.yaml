@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: monitoring
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager:9093
+
+    scrape_configs:
+      - job_name: 'nginx-status'
+        metrics_path: /nginx_status
+        static_configs:
+          - targets: ['192.168.56.10:30080']
+
+      - job_name: 'nginx-exporter'
+        metrics_path: '/metrics'
+        static_configs:
+          - targets: ['nginx-exporter.monitoring.svc.cluster.local:9113']
+
+  rules.yml: |
+    groups:
+    - name: example
+      rules:
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.99, sum(rate(nginx_http_request_duration_seconds_bucket[1m])) by (le)) > 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High request latency on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} has a 99th percentile request latency above 1s (current value: {{ $value }}s)"
+
+      - alert: NginxDown
+        expr: up{job="nginx-status"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nginx is down on {{ $labels.instance }}"
+          description: "Nginx has been down for more than 1 minute on {{ $labels.instance }}"
+
+      - alert: PHPFPMDown
+        expr: up{job="kubernetes-pods",container="php-fpm"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PHP-FPM is down in pod {{ $labels.pod }}"
+          description: "PHP-FPM has been down for more than 1 minute in pod {{ $labels.pod }}"
