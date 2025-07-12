@@ -10,6 +10,10 @@ if [[ "$(hostname)" != "k8s-master" ]]; then
   vagrant ssh k8s-master -- <<-'ENDSSH'
     cd /vagrant  # Assuming your files are synced to /vagrant
 
+    # Disabled taint master for deploy and high performance
+    echo -e "\033[0;32mDisabled taint...\033[0m"
+    kubectl taint nodes k8s-master node-role.kubernetes.io/control-plane:NoSchedule-
+    
     # Create namespace
     echo -e "\033[0;32mCreating namespace...\033[0m"
     kubectl apply -f namespace.yml
