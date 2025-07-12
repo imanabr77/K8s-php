@@ -26,33 +26,85 @@ data:
         static_configs:
           - targets: ['nginx-exporter.monitoring.svc.cluster.local:9113']
 
-  rules.yml: |
+  rules.yml: |+
     groups:
-    - name: example
+    - name: Nginx-Status
       rules:
-      - alert: HighRequestLatency
-        expr: histogram_quantile(0.99, sum(rate(nginx_http_request_duration_seconds_bucket[1m])) by (le)) > 1
+      
+      - alert: Nginx-Down
+        expr: nginx_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NGINX exporter is down (instance {{ $labels.instance }})"
+          description: "The NGINX Prometheus exporter has been unreachable for 2 minutes. Metrics collection has stopped."
+
+      - alert: NginxHighActiveConnections
+        expr: |
+          nginx_connections_active > 100
+          or
+          rate(nginx_connections_accepted[5m]) > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High active connections (instance {{ $labels.instance }})"
+          description: "NGINX has {{ $value }} active connections (threshold: 100). Current accept rate: {{ rate(nginx_connections_accepted[5m]) | humanize }} connections/s."      
+
+      - alert: NginxConnectionHandlingErrors
+        expr: |
+          (nginx_connections_accepted - nginx_connections_handled) > (nginx_connections_accepted * 0.05)
         for: 10m
         labels:
           severity: critical
         annotations:
-          summary: "High request latency on {{ $labels.instance }}"
-          description: "{{ $labels.instance }} has a 99th percentile request latency above 1s (current value: {{ $value }}s)"
+          summary: "NGINX connection handling errors (instance {{ $labels.instance }})"
+          description: "{{ (nginx_connections_accepted - nginx_connections_handled) | humanize }} connections were not properly handled ({{ printf \"%.1f\" ( (nginx_connections_accepted - nginx_connections_handled) / nginx_connections_accepted * 100 ) }}% error rate)."
 
-      - alert: NginxDown
-        expr: up{job="nginx-status"} == 0
-        for: 1m
+      - alert: NginxRequestBacklog
+        expr: |
+          nginx_connections_waiting > 50
+          and
+          nginx_connections_writing < 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NGINX request backlog (instance {{ $labels.instance }})"
+          description: "High waiting connections ({{ $value }}) with low writing activity. Possible backend slowdown."    
+
+      - alert: NginxTrafficSpike
+        expr: |
+          rate(nginx_http_requests_total[1m]) > (avg(rate(nginx_http_requests_total[1h])) * 3
+          and
+          rate(nginx_http_requests_total[1m]) > 1000
+        for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Nginx is down on {{ $labels.instance }}"
-          description: "Nginx has been down for more than 1 minute on {{ $labels.instance }}"
+          summary: "Abnormal traffic spike (instance {{ $labels.instance }})"
+          description: "Current request rate: {{ $value | humanize }} req/s (3x higher than 1h average)."
 
-      - alert: PHPFPMDown
-        expr: up{job="kubernetes-pods",container="php-fpm"} == 0
-        for: 1m
+      - alert: NginxStalledConnections
+        expr: |
+          nginx_connections_reading > avg(nginx_connections_reading[1h]) * 5
+          and
+          nginx_connections_reading > 10
+        for: 10m
         labels:
-          severity: critical
+          severity: warning
         annotations:
-          summary: "PHP-FPM is down in pod {{ $labels.pod }}"
-          description: "PHP-FPM has been down for more than 1 minute in pod {{ $labels.pod }}"
+          summary: "NGINX stalled connections (instance {{ $labels.instance }})"
+          description: "{{ $value }} connections stuck in reading state (5x higher than usual)."
+
+
+
+
+
+
+
+
+
+
+      

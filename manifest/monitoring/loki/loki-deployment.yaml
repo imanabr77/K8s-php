@@ -19,9 +19,16 @@ spec:
       - name: loki
         image: grafana/loki:latest
         args:
-          - '-config.file=/etc/loki/loki.yml'
+        - '-config.file=/etc/loki/loki.yml'
         ports:
         - containerPort: 3100
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
         volumeMounts:
         - name: config-volume
           mountPath: /etc/loki

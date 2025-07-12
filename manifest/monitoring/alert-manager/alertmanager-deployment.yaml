@@ -19,10 +19,17 @@ spec:
       - name: alertmanager
         image: prom/alertmanager
         args:
-          - '--config.file=/etc/alertmanager/alertmanager.yml'
-          - '--storage.path=/alertmanager'
+        - '--config.file=/etc/alertmanager/alertmanager.yml'
+        - '--storage.path=/alertmanager'
         ports:
         - containerPort: 9093
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
         volumeMounts:
         - name: config-volume
           mountPath: /etc/alertmanager

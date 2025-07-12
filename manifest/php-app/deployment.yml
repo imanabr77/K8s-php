@@ -20,6 +20,13 @@ spec:
         image: php:8.2-fpm
         ports:
         - containerPort: 9000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
         volumeMounts:
         - name: php-config
           mountPath: /usr/local/etc/php-fpm.d/www.conf
@@ -34,9 +41,16 @@ spec:
           mountPath: /var/lib/php/wsdlcache
 
       - name: nginx
-        image: nginx:1.23  # Use the lua-enabled version
+        image: nginx:1.23
         ports:
         - containerPort: 80
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "200m"
+            memory: "128Mi"
         volumeMounts:
         - name: nginx-config
           mountPath: /etc/nginx/nginx.conf
