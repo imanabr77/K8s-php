@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: monitoring
+  name: loki
+spec:
+  type: NodePort
+  ports:
+    - port: 3100          # Service port (cluster-internal)
+      targetPort: 3100    # Container port
+      nodePort: 31000     # External port (30000-32767)
+  selector:
+    app: loki             # Matches Loki pod labels

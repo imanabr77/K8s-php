@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: monitoring
+  name: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      containers:
+      - name: loki
+        image: grafana/loki:latest
+        args:
+          - '-config.file=/etc/loki/loki.yml'
+        ports:
+        - containerPort: 3100
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/loki
+        - name: storage-volume
+          mountPath: /data/loki
+      volumes:
+      - name: config-volume
+        configMap:
+          name: loki-config
+      - name: storage-volume
+        emptyDir: {}
