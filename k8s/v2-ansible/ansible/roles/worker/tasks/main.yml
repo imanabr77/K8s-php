@@ -1,0 +1,34 @@
+---
+#- name: Wait for master to be ready
+#  wait_for_connection:
+#    delay: 10
+#    timeout: 600
+
+#- name: Copy join command from master
+#  command: scp -o StrictHostKeyChecking=no vagrant@192.168.56.10:/home/vagrant/join-command.sh /home/vagrant/join-command.sh
+#  become: no
+
+#- name: Join Kubernetes cluster
+#  command: sh /home/vagrant/join-command.sh
+
+- name: Wait for master to be ready
+  wait_for_connection:
+    host: 192.168.56.10
+    port: 6443
+    delay: 10
+    timeout: 600
+
+- name: Ensure join command exists on master
+  stat:
+    path: /home/vagrant/join-command.sh
+  delegate_to: 192.168.56.10
+  register: join_command_stat
+  failed_when: not join_command_stat.stat.exists
+
+- name: Copy join command from master
+  command: scp -o StrictHostKeyChecking=no vagrant@192.168.56.10:/home/vagrant/join-command.sh /home/vagrant/join-command.sh
+  become: no
+
+- name: Join Kubernetes cluster
+  command: sh /home/vagrant/join-command.sh
+  become: yes

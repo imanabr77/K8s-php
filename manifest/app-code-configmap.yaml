@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: php-app
+  name: app-code
+data:
+  index.php: |
+    <?php
+    header('Content-Type: text/plain');
+    echo "Client IP: " . $_SERVER['REMOTE_ADDR'] . "\n";
+    echo "Server IP: " . $_SERVER['SERVER_ADDR'] . "\n";
+    echo "Host: " . $_SERVER['HTTP_HOST'] . "\n";
+    echo "User Agent: " . $_SERVER['HTTP_USER_AGENT'] . "\n";
+    phpinfo();
+    ?>

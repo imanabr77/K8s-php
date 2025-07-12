@@ -1,0 +1,38 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Base box
+  config.vm.box = "ubuntu/jammy64"
+
+  # Configure shared directory
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+
+  # Master node
+  config.vm.define "master" do |master|
+    master.vm.hostname = "k8s-master"
+    master.vm.network "private_network", ip: "192.168.56.10"
+    master.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 2
+    end
+    master.vm.provision "shell", path: "scripts/setup-common.sh"
+    master.vm.provision "shell", path: "scripts/setup-master.sh", env: {"USER" => "vagrant", "SHARED_DIR" => "/vagrant"}
+  end
+
+  # Worker nodes
+  (1..2).each do |i|
+    config.vm.define "worker#{i}" do |worker|
+      worker.vm.hostname = "k8s-worker#{i}"
+      worker.vm.network "private_network", ip: "192.168.56.#{10+i}"
+      worker.vm.provider "virtualbox" do |vb|
+        vb.memory = 2048
+        vb.cpus = 2
+      end
+      worker.vm.provision "shell", path: "scripts/setup-common.sh"
+      worker.vm.provision "shell", path: "scripts/setup-worker.sh", env: {"USER" => "vagrant", "SHARED_DIR" => "/vagrant"}
+    end
+  end
+end

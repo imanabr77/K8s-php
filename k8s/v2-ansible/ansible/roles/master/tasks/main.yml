@@ -1,0 +1,81 @@
+---
+
+#- name: Pre-pull Kubernetes images
+#  command: kubeadm config images pull
+
+- name: Pre-pull Kubernetes images
+  command: kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock
+  changed_when: false
+
+#- name: Initialize Kubernetes cluster
+#  command: kubeadm init --apiserver-advertise-address=192.168.56.10 --pod-network-cidr=10.217.0.0/16 --v=5
+#  register: kubeadm_init
+#  failed_when: "kubeadm_init.rc != 0 and 'CRI' not in kubeadm_init.stderr"
+
+- name: Initialize Kubernetes cluster with containerd
+  command: |
+    kubeadm init \
+      --apiserver-advertise-address=192.168.56.10 \
+      --pod-network-cidr=10.217.0.0/16 \
+      --cri-socket=unix:///run/containerd/containerd.sock \
+      --v=5
+  register: kubeadm_init
+  failed_when: "kubeadm_init.rc != 0"
+
+#- name: Create .kube directory
+#  file:
+#    path: /home/vagrant/.kube
+#    state: directory
+#    owner: vagrant
+#    group: vagrant
+
+- name: Create .kube directory
+  file:
+    path: /home/vagrant/.kube
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: '0700'
+
+- name: Copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/vagrant/.kube/config
+    remote_src: yes
+    owner: vagrant
+    group: vagrant
+
+- name: Set KUBECONFIG environment variable
+  lineinfile:
+    path: /home/vagrant/.bashrc
+    line: 'export KUBECONFIG=/home/vagrant/.kube/config'
+    create: yes
+    owner: vagrant
+    group: vagrant
+
+#- name: Install Cilium CNI plugin
+#  command: kubectl apply -f https://raw.githubusercontent.com/cilium/cilium/v1.12.0/install/kubernetes/quick-install.yaml
+#  when: "'Your Kubernetes control-plane has initialized successfully!' in kubeadm_init.stdout
+
+- name: Install Cilium CNI plugin
+  command: kubectl apply -f https://raw.githubusercontent.com/cilium/cilium/v1.16.0/install/kubernetes/quick-install.yaml
+  environment:
+    KUBECONFIG: /home/vagrant/.kube/config
+  when: "Your Kubernetes control-plane has initialized successfully! in kubeadm_init.stdout"
+
+#- name: Save join command
+#  copy:
+#    dest: /home/vagrant/join-command.sh
+#    content: "{{ kubeadm_init.stdout_lines[-2] }}"
+#    mode: '0755'
+#    owner: vagrant
+#    group: vagrant
+
+- name: Save join command
+  copy:
+    dest: /home/vagrant/join-command.sh
+    content: "{{ kubeadm_init.stdout_lines | select('search', 'kubeadm join') | first }}"
+    mode: '0755'
+    owner: vagrant
+    group: vagrant
+    when: "'Your Kubernetes control-plane has initialized successfully!' in kubeadm_init.stdout"

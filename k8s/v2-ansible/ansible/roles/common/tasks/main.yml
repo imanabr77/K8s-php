@@ -1,0 +1,183 @@
+---
+- name: Disable swap
+  command: swapoff -a
+  changed_when: false
+
+- name: Disable swap in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+- name: Install required packages
+  apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: yes
+
+#- name: Install Docker packages
+#  apt:
+#    name:
+#      - docker-ce
+#      - docker-ce-cli
+#      - containerd.io
+#    state: present
+#    update_cache: yes
+
+#- name: Configure Docker daemon
+#  copy:
+#    dest: /etc/docker/daemon.json
+#    content: |
+#      {
+#        "exec-opts": ["native.cgroupdriver=systemd"],
+#        "log-driver": "json-file",
+#        "log-opts": {
+#          "max-size": "100m"
+#        },
+#        "storage-driver": "overlay2"
+#      }
+
+- name: Install containerd
+  apt:
+    name:
+      - containerd.io
+    state: present
+    update_cache: yes
+
+- name: Ensure containerd config directory exists
+  file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
+
+- name: Configure containerd
+  blockinfile:
+    path: /etc/containerd/config.toml
+    block: |
+      version = 2
+      [plugins."io.containerd.grpc.v1.cri"]
+        sandbox_image = "registry.k8s.io/pause:3.9"
+        [plugins."io.containerd.grpc.v1.cri".containerd]
+          disable_snapshot_annotations = true
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+            [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+              SystemdCgroup = true
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - containerd config"
+    create: yes
+
+- name: Enable CRI plugin explicitly
+  lineinfile:
+    path: /etc/containerd/config.toml
+    line: 'disabled_plugins = []'
+    regexp: '^disabled_plugins ='
+
+- name: Enable and start containerd
+  systemd:
+    name: containerd
+    enabled: yes
+    state: restarted
+  register: containerd_status
+  failed_when: containerd_status.state != 'started'
+
+- name: Verify containerd is running
+  systemd:
+    name: containerd
+    state: started
+  register: containerd_status
+  failed_when: containerd_status.state != 'started'
+
+- name: Install crictl
+  shell: |
+    VERSION="v1.31.0"
+    curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz --output crictl-$VERSION-linux-amd64.tar.gz
+    sudo tar zxvf crictl-$VERSION-linux-amd64.tar.gz -C /usr/local/bin/
+    rm crictl-$VERSION-linux-amd64.tar.gz
+  args:
+    creates: /usr/local/bin/crictl
+
+- name: Test CRI connection
+  command: crictl --runtime-endpoint unix:///run/containerd/containerd.sock version
+  register: cri_test
+  changed_when: false
+  failed_when: cri_test.rc != 0
+
+- name: Debug CRI test output
+  debug:
+    var: cri_test.stdout
+  when: cri_test.rc == 0
+
+- name: Fail if CRI test failed
+  fail:
+    msg: "CRI connection test failed: {{ cri_test.stderr }}"
+  when: cri_test.rc != 0
+
+- name: Add Kubernetes GPG key
+  apt_key:
+    url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+
+- name: Add Kubernetes repository
+  apt_repository:
+    repo: deb https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
+    state: present
+    update_cache: yes
+
+- name: Install kubeadm, kubelet, kubectl
+  apt:
+    name:
+      - kubeadm
+      - kubelet
+      - kubectl
+    state: present
+    allow_downgrade: yes  # Helps if version conflicts occur
+
+- name: Hold Kubernetes packages at current version
+  command: apt-mark hold kubelet kubeadm kubectl
+
+- name: Enable and start kubelet
+  systemd:
+    name: kubelet
+    enabled: yes
+    state: started
+
+
+- name: Load kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - br_netfilter
+    - overlay
+
+- name: Pause to let kernel modules initialize
+  pause:
+    seconds: 30
+
+- name: Configure sysctl params
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  with_items:
+    - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { name: 'net.ipv4.ip_forward', value: '1' }
+    - { name: 'vm.swappiness', value: '0' }
