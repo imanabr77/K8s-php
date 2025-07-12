@@ -1,0 +1,8 @@
+# 1. Introduce bad config
+kubectl -n php-app patch configmap nginx-config --patch '{"data":{"nginx.conf":"error_page 500 /50x.html; location ~* \.php$ { return 500; }"}}'
+
+# 2. Force reload
+kubectl -n php-app rollout restart deploy/php-app
+
+# 3. Verify failure
+watch -n 1 'curl -s -o /dev/null -w "%{http_code}" http://php-app-service/checkout.php'

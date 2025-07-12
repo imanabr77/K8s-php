@@ -1,0 +1,4 @@
+# Error pattern in logs:
+kubectl logs -n php-app -l app=php-app -c nginx | grep "500" | head -3
+# Output:
+2025/07/10 09:44:21 [error] 12#12: *143 upstream sent invalid FastCGI response
