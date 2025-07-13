@@ -26,9 +26,17 @@ The PHP application is a simple example (e.g., a basic web app), but the manifes
    $ ./deploy.sh
 ````
 
+
+
 ## Document
 > [!IMPORTANT]
 > To read TASK and project documents, go to the documents directory.
+
+
+
+## Test
+> [!IMPORTANT]
+> To test the project, such as checking whether monitoring is up and the Real IP, go to the test directory.
 
 
 
