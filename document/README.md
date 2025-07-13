@@ -19,6 +19,11 @@ Real_IP and Curl response
 
 ![Alt text](image-4.png)
 
+Grafana and nginx monitoring
+
+![Alt text](image-6.png)
+
+![Alt text](image-7.png)
 
 ### RCA-Postmortem
 [RCA-Postmortem](https://docs.google.com/document/d/1n8Asv4IkOsETLVRpxrXP6oKr8UJua-PHBqrG563pel4/edit?tab=t.0)
