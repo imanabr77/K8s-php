@@ -5,6 +5,8 @@ Documents written for this project , cilick on this links
 ### Task result
 [Taskresult](https://docs.google.com/document/d/1-M_rz_rqhKAfu5uzmmhg6riWgcrCcwqejKINFZZyAGg/edit?tab=t.0)
 
+![Alt text](image.png)
+
 
 ### RCA-Postmortem
 [RCA-Postmortem](https://docs.google.com/document/d/1n8Asv4IkOsETLVRpxrXP6oKr8UJua-PHBqrG563pel4/edit?tab=t.0)
