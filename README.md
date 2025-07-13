@@ -38,7 +38,7 @@ The PHP application is a simple example (e.g., a basic web app), but the manifes
    
    Installing prerequisites.:
    ````
-    cd arequirements
-    ./installation-Ansible.sh
-    ./installation-Vagrant-VirtualBox.sh
+   $ cd arequirements
+   $ ./installation-Ansible.sh
+   $ ./installation-Vagrant-VirtualBox.sh
    ````
