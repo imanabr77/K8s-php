@@ -6,6 +6,8 @@ Output images of implemented task objectives.
 ### Task result
 [Taskresult](https://docs.google.com/document/d/1-M_rz_rqhKAfu5uzmmhg6riWgcrCcwqejKINFZZyAGg/edit?tab=t.0)
 
+![Alt text](image-5.png)
+
 ![Alt text](image.png)
 
 ![Alt text](image-1.png)
