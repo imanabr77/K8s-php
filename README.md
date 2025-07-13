@@ -21,7 +21,7 @@ The PHP application is a simple example (e.g., a basic web app), but the manifes
    $ git clone https://github.com/imanabr77/K8s-php/tree/main
    $ cd k8s
    $ cd v1-bash  (recommended )
-   $ cd vagrant up
+   $ vagrant up
    $ cd manifest
    $ ./deploy.sh
 ````
