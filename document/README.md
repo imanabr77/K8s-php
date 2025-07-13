@@ -2,10 +2,20 @@
 
 Documents written for this project , cilick on this links
 
+Output images of implemented task objectives.
 ### Task result
 [Taskresult](https://docs.google.com/document/d/1-M_rz_rqhKAfu5uzmmhg6riWgcrCcwqejKINFZZyAGg/edit?tab=t.0)
 
 ![Alt text](image.png)
+
+![Alt text](image-1.png)
+
+Real_IP and Curl response
+![Alt text](image-2.png)
+
+![Alt text](image-3.png)
+
+![Alt text](image-4.png)
 
 
 ### RCA-Postmortem
