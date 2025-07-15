@@ -18,7 +18,8 @@ The PHP application is a simple example (e.g., a basic web app), but the manifes
 ## Quick Start
    For installtion K8S and Deploy PHP-APP and Monitoring:
 ````  
-   $ git clone https://github.com/imanabr77/K8s-php/tree/main
+   $ git clone https://github.com/imanabr77/K8s-php.git
+   $ cd K8s-php
    $ cd k8s
    $ cd v1-bash  (recommended )
    $ vagrant up
@@ -46,7 +47,7 @@ The PHP application is a simple example (e.g., a basic web app), but the manifes
    
    Installing prerequisites.:
    ````
-   $ cd arequirements
+   $ cd requirements
    $ ./installation-Ansible.sh
    $ ./installation-Vagrant-VirtualBox.sh
    ````
